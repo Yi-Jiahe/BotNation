@@ -31,18 +31,23 @@ func getConfig() (Config, error) {
 	return config, nil
 }
 
-func main() {
-	config, err := getConfig()
+func AnswerIssue(name string, c nationstates.Client) {
+	issues, err := c.GetIssues(name)
 	if err != nil {
 		panic(err)
 	}
-	client := nationstates.Client{
-		Password: config.Password,
+
+	// No issues to be addressed
+	if len(issues) == 0 {
+		shards := []string{"nextissuetime"}
+		nation, err := c.GetNation(name, shards, nil)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("%+v\n", nation)
+		return
 	}
-	issues, err := client.GetIssues(config.Name)
-	if err != nil {
-		panic(err)
-	}
+
 	// Address the first issue
 	issue := issues[0]
 	// Pick a random option
@@ -58,7 +63,7 @@ func main() {
 	}
 	fmt.Println()
 
-	consequences, err := client.AnswerIssue(config.Name, issue.ID, choice)
+	consequences, err := c.AnswerIssue(name, issue.ID, choice)
 	if err != nil {
 		panic(err)
 	}
@@ -91,4 +96,16 @@ func main() {
 			fmt.Printf("%s %s %.2f%% by %.2f to %.2f\n", nationstates.CensusLabels[v.ID], direction, v.PChange, v.Change, v.Score)
 		}
 	}
+}
+
+func main() {
+	config, err := getConfig()
+	if err != nil {
+		panic(err)
+	}
+	client := nationstates.Client{
+		Password: config.Password,
+	}
+
+	AnswerIssue(config.Name, client)
 }
