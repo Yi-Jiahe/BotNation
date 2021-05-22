@@ -148,16 +148,14 @@ func PerformCensus(name string, c nationstates.Client) {
 }
 
 func HandleRequest() {
-	config, err := getConfig()
-	if err != nil {
-		panic(err)
-	}
+	name := os.Getenv("NAME")
+	password := os.Getenv("PASSWORD")
+
 	client := nationstates.Client{
-		Password: config.Password,
+		Password: password,
 	}
 
-	AnswerIssues(config.Name, client)
-	// PerformCensus(config.Name, client)
+	AnswerIssues(name, client)
 
 	return
 }
