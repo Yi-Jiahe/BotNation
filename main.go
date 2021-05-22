@@ -38,36 +38,38 @@ func AnswerIssues(name string, c nationstates.Client) {
 		panic(err)
 	}
 
+	var log string
+
 	if len(issues) != 0 {
 		for _, issue := range issues {
 
 			// Pick a random option
 			rand.Seed(time.Now().Unix())
 			choice := rand.Intn(len(issue.Options))
-			fmt.Printf("---------------ISSUE: %s-----------------\n", issue.Title)
-			fmt.Printf("%s\n\n", issue.Text)
+			log += fmt.Sprintf("---------------ISSUE: %s-----------------\n", issue.Title)
+			log += fmt.Sprintf("%s\n\n", issue.Text)
 			for i, v := range issue.Options {
 				if i == choice {
-					fmt.Printf("(CHOSEN) ")
+					log += fmt.Sprintf("(CHOSEN) ")
 				}
-				fmt.Printf("%d: %s\n", v.ID, v.Text)
+				log += fmt.Sprintf("%d: %s\n", v.ID, v.Text)
 			}
-			fmt.Println()
+			log += "\n"
 
 			consequences, err := c.AnswerIssue(name, issue.ID, choice)
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("--------------------Consequences----------------------")
+			log += fmt.Sprintln("--------------------Consequences----------------------")
 			if consequences.Error != "" {
-				fmt.Println(consequences.Error)
+				log += fmt.Sprintln(consequences.Error)
 			} else {
-				fmt.Printf("Talking Point: %s\n\n", consequences.Desc)
-				fmt.Println("Headlines:")
+				log += fmt.Sprintf("Talking Point: %s\n\n", consequences.Desc)
+				log += fmt.Sprintln("Headlines:")
 				for _, v := range consequences.Headlines {
-					fmt.Println(v)
+					log += fmt.Sprintln(v)
 				}
-				fmt.Println()
+				log += "\n"
 
 				// Trends are sorted by percentage change from + to -
 				// We want to sort by the absolute magnitudes of the percentage change
@@ -75,7 +77,7 @@ func AnswerIssues(name string, c nationstates.Client) {
 				sort.Slice(trends, func(i, j int) bool {
 					return math.Abs(float64(trends[i].PChange)) > math.Abs(float64(trends[j].PChange))
 				})
-				fmt.Println("Trends:")
+				log += fmt.Sprintln("Trends:")
 				for _, v := range trends {
 					var direction string
 					switch {
@@ -84,9 +86,9 @@ func AnswerIssues(name string, c nationstates.Client) {
 					case v.PChange < 0:
 						direction = "lost"
 					}
-					fmt.Printf("%s %s %.2f%% by %.2f to %.2f\n", nationstates.CensusLabels[v.ID], direction, v.PChange, v.Change, v.Score)
+					log += fmt.Sprintf("%s %s %.2f%% by %.2f to %.2f\n", nationstates.CensusLabels[v.ID], direction, v.PChange, v.Change, v.Score)
 				}
-				fmt.Println()
+				log += fmt.Sprintln()
 			}
 		}
 	}
@@ -100,13 +102,13 @@ func AnswerIssues(name string, c nationstates.Client) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Next issue at %v\n", t)
+	log += fmt.Sprintf("Next issue at %v\n", t)
 
+	fmt.Print(log)
 }
 
 func PerformCensus(name string, c nationstates.Client) {
 	shard := c.CreateCensusShard(nil, nil)
-	fmt.Println(shard)
 	n, err := c.GetNation(name, []string{shard}, nil)
 	if err != nil {
 		panic(err)
@@ -116,32 +118,35 @@ func PerformCensus(name string, c nationstates.Client) {
 		fmt.Println("No scales returned")
 		return
 	}
-	fmt.Println("--------------------------National Census-----------------------")
+	var log string
+
+	log += fmt.Sprintln("--------------------------National Census-----------------------")
 	for _, v := range scales {
-		fmt.Printf("------%s-------\n", nationstates.CensusLabels[v.ID])
+		log += fmt.Sprintf("------%s-------\n", nationstates.CensusLabels[v.ID])
 		if len(v.Points) != 0 {
-			fmt.Println("I don't really want to print that")
+			log += fmt.Sprintln("I don't really want to print that")
 		} else {
 			if v.Score != 0 {
-				fmt.Printf("Score: %.2f\n", v.Score)
+				log += fmt.Sprintf("Score: %.2f\n", v.Score)
 			}
 			if v.Rank != 0 {
-				fmt.Printf("Ranked %dth in the world\n", v.Rank)
+				log += fmt.Sprintf("Ranked %dth in the world\n", v.Rank)
 			}
 			if v.PRank != 0 {
-				fmt.Printf("%d%% in the world\n", v.PRank)
+				log += fmt.Sprintf("%d%% in the world\n", v.PRank)
 			}
 			if v.RRank != 0 {
-				fmt.Printf("Ranked %dth in the region\n", v.RRank)
+				log += fmt.Sprintf("Ranked %dth in the region\n", v.RRank)
 			}
 			if v.PRRank != 0 {
-				fmt.Printf("%d%% in the region\n", v.PRRank)
+				log += fmt.Sprintf("%d%% in the region\n", v.PRRank)
 			}
 		}
 	}
+	fmt.Print(log)
 }
 
-func main() {
+func HandleRequest() {
 	config, err := getConfig()
 	if err != nil {
 		panic(err)
@@ -151,5 +156,11 @@ func main() {
 	}
 
 	AnswerIssues(config.Name, client)
-	// PerformCensus(config.Name, client)
+	PerformCensus(config.Name, client)
+
+	return
+}
+
+func main() {
+	HandleRequest()
 }
