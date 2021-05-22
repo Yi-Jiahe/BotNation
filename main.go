@@ -11,6 +11,7 @@ import (
 
 	// "github.com/yi-jiayu/nationstates-secretary/nationstates"
 	"github.com/Yi-Jiahe/BotNation/nationstates"
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
 type Config struct {
@@ -156,11 +157,11 @@ func HandleRequest() {
 	}
 
 	AnswerIssues(config.Name, client)
-	PerformCensus(config.Name, client)
+	// PerformCensus(config.Name, client)
 
 	return
 }
 
 func main() {
-	HandleRequest()
+	lambda.Start(HandleRequest)
 }
